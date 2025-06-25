@@ -1,3 +1,4 @@
+import random
 from otree.api import *
 
 
@@ -10,6 +11,7 @@ class C(BaseConstants):
     NAME_IN_URL = 'contest'
     PLAYERS_PER_GROUP = None
     NUM_ROUNDS = 2
+    NUM_PAID_ROUNDS = 1
     ENDOWMENT = Currency(10)
     COST_PER_TICKET = Currency(0.50)
     PRIZE = Currency(8)
@@ -17,15 +19,23 @@ class C(BaseConstants):
 
 
 class Subsession(BaseSubsession):
-    is_paid = models.BooleanField()
-    csf = models.StringField(choices=["share", "allpay"])
+    is_paid = models.BooleanField(initial=False)
+    csf = models.StringField(choices=["share", "allpay", "lottery"])
 
 
     def setup_round(self):
-        self.is_paid = self.round_number % 2 == 1
+        if self.round_number == 1:
+            self.setup_paid_rounds()
         self.csf = self.session.config["contest_csf"]
+        if self.session.config.get("contest_group_randomly", False):
+            self.group_randomly()
         for group in self.get_groups():
             group.setup_round()
+
+    def setup_paid_rounds(self):
+        for rd in random.sample(self.in_rounds(1, C.NUM_ROUNDS),
+                                k=C.NUM_PAID_ROUNDS):
+            rd.is_paid = True
 
 
     def compute_outcome(self):
@@ -41,6 +51,15 @@ class Group(BaseGroup):
         self.prize = C.PRIZE
         for player in self.get_players():
             player.setup_round()
+
+    def compute_outcome_lottery(self):
+        try:
+            winner = random.choices(self.get_players(), k = 1,
+                                weights = [p.tickets_purchased for p in self.get_players()])[0]
+        except ValueError:
+            winner = random.choice(self.get_players())
+        for player in self.get_players():
+            player.prize_won = 1 if player == winner else 0
 
     def compute_outcome_share(self):
         total = sum(player.tickets_purchased for player in self.get_players())
@@ -100,6 +119,9 @@ class Player(BasePlayer):
     def max_tickets_affordable(self):
         return int(self.endowment / self.cost_per_ticket)
 
+    def in_paid_rounds(self):
+        return [rd for rd in self.in_all_rounds() if rd.subsession.is_paid]
+
 
 
 
@@ -112,7 +134,9 @@ class SetupRound(WaitPage):
         subsession.setup_round()
 
 class Intro(Page):
-    pass
+    @staticmethod
+    def is_displayed(self):
+        return self.round_number == 1
 
 class Decision(Page):
     form_model = 'player'
@@ -139,14 +163,12 @@ class DecisionWaitPage(WaitPage):
         subsession.compute_outcome()
 
 class Results(Page):
-    @staticmethod
-    def vars_for_template(player):
-        return {
-            'coplayer_purchased': player.group.get_player_by_id(3 - player.id_in_group).tickets_purchased,
-        }
+    pass
 
 class EndBlock(Page):
-    pass
+    @staticmethod
+    def is_displayed(player):
+        return player.round_number == C.NUM_ROUNDS
 
 
 page_sequence = [
