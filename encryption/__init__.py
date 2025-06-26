@@ -14,7 +14,7 @@ class C(BaseConstants):
     NAME_IN_URL = 'encryption'
     PLAYERS_PER_GROUP = None
     NUM_ROUNDS = 3
-    TIME_FOR_TASK = 40
+    TIME_FOR_TASK = 1000
     LOOKUP_TABLES = [
         "ZYXJIUTLKQSRNWVHGFEDMOPCBA",
         "ZYXWVUTSRQPONMLKJIHGFEDCBA",
