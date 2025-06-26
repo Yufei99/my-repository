@@ -49,12 +49,23 @@ SESSION_CONFIGS = [
         ],
         num_demo_participants=2,
     ),
-dict(
+    dict(
         name="summary",
         app_sequence=[
             "summary"
         ],
         num_demo_participants=2,
+    ),
+    dict(
+        name="full_experiment",
+        app_sequence=[
+            "contest",
+            "encryption",
+            "summary",
+        ],
+        num_demo_participants=2,
+        contest_csf="share",
+        contest_endowment=9,
     ),
 ]
 

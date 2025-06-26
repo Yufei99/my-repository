@@ -4,11 +4,11 @@
 
 {{ block content }}
 
-{{ for rd in player.in_all_rounds }}
+{{ for rd in player.in_paid_rounds }}
 
-    {{ if rd.subsession.is_paid }}
-    Round {{ rd.round.number }}:
-    Tickets {{ rd.tickets_purchases }},
+
+    Round {{ rd.round_number }}:
+    Tickets {{ rd.tickets_purchased }},
     Prize share {{ rd.prize_won }},
     Earnings {{ rd.earnings }},
     Paid {{ rd.subsession.is_paid }}.
